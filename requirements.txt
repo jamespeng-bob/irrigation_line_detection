@@ -1,7 +1,31 @@
-# Core analysis / exploration deps (used by scripts/explore_dataset.py).
-# Training-specific deps (ultralytics, torch, etc.) will be added when the
-# training pipeline lands.
-pillow>=10.0,<12
-numpy>=1.26,<3
-matplotlib>=3.8,<4
-PyYAML>=6,<7
+# Python dependencies for irrigation_line_detection — pure-Python only.
+#
+# torch + torchvision are NOT pinned here. Their wheel availability depends
+# on the host's CUDA driver, and pinning a single `--index-url` here would
+# break on at least one of our servers (cu128 wheels need a 12.8+ driver;
+# the rtx6000 server is on 12.4). Install torch first, then this file:
+#
+#     source .venv/bin/activate
+#     bash scripts/install_torch.sh        # auto-picks cu* wheel for the driver
+#     pip install -r requirements.txt
+#
+# Servers currently targeted (mirrors lateral_detection):
+#   bobyard-server-5090   driver 12.8   →   cu128 wheels   (torch 2.9.x)
+#   bobyard-server-6000   driver 12.4   →   cu124 wheels   (torch 2.6.x latest)
+
+# Core
+numpy>=1.26
+opencv-python>=4.10
+pillow>=10.0
+pyyaml>=6.0
+tqdm>=4.66
+scikit-image>=0.22         # skimage.morphology.skeletonize (clDice + length-ratio)
+
+# Deep learning (torch + torchvision installed by scripts/install_torch.sh)
+segmentation-models-pytorch>=0.3.4
+
+# Notebook / inspection
+jupyterlab>=4.0
+ipykernel>=6.0
+matplotlib>=3.8
+nbstripout>=0.7

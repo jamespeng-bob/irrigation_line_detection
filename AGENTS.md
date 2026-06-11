@@ -142,3 +142,54 @@ git pull --ff-only
 **Golden rule:** if you're about to type `vim`, `nano`, or any editor command
 on `bobyard-server-6000`, stop. Go back to the MacBook, edit there, commit,
 push, then `git pull` on the server.
+
+---
+
+## 8. Code conventions specific to the training stack
+
+- **Multi-label, not multi-class softmax.** The model emits ``(B, K, H, W)``
+  logits with one independent sigmoid per class. Pixels at line crossings
+  legitimately belong to two classes; softmax would force a choice.
+- **All paths use `pathlib.Path`.** No `os.path.join`, no hard-coded absolute
+  paths in any committed code — read paths from `configs/*.yaml` or CLI.
+- **`from __future__ import annotations`** at the top of every `.py` file so
+  3.10-style union types don't break Python 3.9 imports locally (system
+  Python on macOS is 3.9; the 6000 server is 3.10; the 5090 server is 3.13).
+- **Augmentation policy:** thin lines (~4 px) are sensitive — only h-flip,
+  v-flip, and 90° rotations. **Do not** introduce elastic, arbitrary
+  rotation, perspective, or heavy color jitter without a Dice benchmark.
+- **Loss recipe:** per-channel BCE + macro-Dice is the Phase-1 default.
+  clDice / Lovász code lives in `training/losses.py` but is disabled by
+  default — the v3 ladder in `lateral_detection` showed they add ≤ 0.0018
+  Dice on this task. Re-enable only behind a config overlay + benchmark.
+- **Best-checkpoint metric:** **macro-Dice** across the 6 classes (forces the
+  rare classes — `drip`, `main_1` — to actually be learned). Whole-image
+  Dice is logged in parallel but does not select the checkpoint (it only
+  runs every N epochs).
+- **SyncBN under DDP:** opt-in; on by default. Override to `false` for any
+  encoder with many small BN layers (EfficientNet's depthwise + SE blocks,
+  MobileNet, etc.) — `lateral_detection` lost ~20 Dice points to SyncBN+EffB3.
+
+## 9. Dataset pipeline reproducibility
+
+The training pipeline reads the *merged* COCO produced by
+`scripts/remap_classes.py`, NOT the raw Roboflow export. The class set is
+the 6-class merge defined in `configs/class_remap.yaml`:
+
+```
+1: lateral_solid_0   2: sleeves           3: lateral_other_0
+4: main_0            5: drip              6: main_1
+```
+
+The trainer reads class names directly from the merged COCO's
+`categories:` block — there is **no** parallel class list in `configs/`
+that could drift out of sync.
+
+Local + server pipeline (run after any change to `class_remap.yaml`):
+
+```bash
+python scripts/remap_classes.py \
+    --src ../datasets/poly-irrigation.v6-v2_w_boboflow.coco \
+    --dst ../datasets/poly-irrigation.v6-v2_w_boboflow.coco.merged \
+    --rules configs/class_remap.yaml --overwrite
+```

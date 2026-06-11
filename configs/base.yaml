@@ -1,0 +1,21 @@
+# Base configuration for irrigation_line_detection.
+# All paths are resolved relative to the repository root unless absolute.
+#
+# The dataset is the *merged* COCO export produced by
+#     python scripts/remap_classes.py
+# (18 source classes → 6 trained classes; see configs/class_remap.yaml).
+# Build it once locally and on the server before launching training.
+
+data:
+  dataset_root: ../datasets/poly-irrigation.v6-v2_w_boboflow.coco.merged
+  train_dir: train
+  valid_dir: valid
+  test_dir:  test            # not present in v6; loader will simply skip it
+
+# Ground-truth rasterization.
+rasterize:
+  # Stroke thickness in pixels at native image resolution. Should roughly
+  # match the line width drawn on the blueprint (~4 px). Mirrors what
+  # lateral_detection used for the v56 lateral-only dataset; revisit if
+  # the v6 plans render thicker/thinner.
+  thickness: 4

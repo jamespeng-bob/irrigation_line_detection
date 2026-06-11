@@ -1,0 +1,87 @@
+# Phase-1 baseline training config.
+#
+# Default encoder: MiT-B2 (clean winner across Dice/IoU/clDice in the v3
+# lateral_detection ladder; its skel-length-ratio median is also 1.0, so
+# both ranking criteria agreed). Default loss: per-channel BCE + macro-Dice
+# (clDice/Lovász added negligible Dice in v3 — kept in code but disabled
+# here; flip on via configs/train_v3*.yaml-style overlays later).
+
+model:
+  name: smp_unet
+  encoder: mit_b2
+  encoder_weights: imagenet
+
+data:
+  tile_size: 1024
+  stride:    768
+  train_mode: random
+  val_mode:   pos_only_grid
+  samples_per_epoch_per_image: 8
+
+augmentation:
+  enabled: true
+  hflip_prob:     0.5
+  vflip_prob:     0.5
+  rotate_90_prob: 0.5            # k * 90 degrees, k in {1, 2, 3}
+
+normalization:
+  # Dataset-specific stats computed over 50 random training plans
+  # (~3.55 B pixels) on the v6 merged export. Reproduce with:
+  #     python scripts/compute_dataset_stats.py \
+  #         --root ../datasets/poly-irrigation.v6-v2_w_boboflow.coco.merged \
+  #         --split train --n-images 50
+  #
+  # The v6 plans are mostly-white architectural drawings (mean ≈ 0.95)
+  # with thin dark line work (std ≈ 0.19), unlike the v56 dataset's
+  # darker rendering (mean ≈ 0.20). Using v56 stats — or ImageNet stats —
+  # here would yield wildly off post-norm distributions and slow the
+  # encoder's first few layers to absorb the shift.
+  mean: [0.9548, 0.9547, 0.9548]
+  std:  [0.1849, 0.1851, 0.1850]
+
+loss:
+  name: bce_dice                # bce_dice | composite
+  bce_pos_weight: 1.0
+  dice_weight:    1.0
+  # Composite-loss aux weights (only consumed when loss.name == composite):
+  cldice_weight:  0.0
+  cldice_warmup:  0
+  cldice_iter:    3
+  lovasz_weight:  0.0
+  lovasz_warmup:  0
+
+training:
+  # bs=8 fits MiT-B2 single-GPU on the 50 GB RTX 6000 with comfortable
+  # headroom (v3a-c at bs=8 used ~25 GB). bs=16 OOMs because MiT's attention
+  # matmul is O(N^2) in spatial tokens. HGNetv2-B4 fits bs=16 — override
+  # in an overlay if you swap encoders.
+  batch_size:  8
+  num_workers: 6
+  epochs:      80
+  lr:          1.0e-4
+  weight_decay: 1.0e-4
+  grad_clip:   1.0
+  device:      cuda
+  save_dir:    runs/v1_mitb2_bcedice
+  log_interval: 20
+  val_viz_count: 4
+  best_metric:  dice_macro
+
+  # LR schedule. 'constant' = use lr throughout (Phase-1 baseline mirror of
+  # lateral_detection v2 runs). 'cosine' adds linear warmup + cosine anneal.
+  lr_schedule: constant
+  warmup_epochs: 0
+  cosine_min_lr_ratio: 0.01
+
+  # Whole-image (true full-resolution tiled-inference) Dice every N epochs.
+  # On the 6000 with bs=4 inference, expect ~30-60 s per 10k×7k plan × 33
+  # valid images = roughly 20-30 min per evaluation. Set to 0 to disable.
+  whole_image_eval_every: 10
+  whole_image_eval_batch_size: 4
+
+  # SyncBN under DDP. Keep true for LayerNorm-only encoders (MiT/SegFormer,
+  # Swin, ConvNeXt — no-op anyway). Override to FALSE for EfficientNet /
+  # MobileNet / any encoder with depthwise + SE blocks where SyncBN at low
+  # per-rank batch size noisifies BN stats (cost lateral_detection ~20 Dice
+  # points on v2a-ddp).
+  sync_batch_norm: true

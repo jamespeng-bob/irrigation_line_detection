@@ -117,10 +117,12 @@ ckpts/
 # !configs/**/*.pt
 
 # ----------------------------------------------------------------------------
-# Datasets / large media (datasets live outside the repo on disk / server)
+# Datasets / large media (datasets live outside the repo on disk / server,
+# at ../datasets/. We deliberately do NOT ignore "data/" here because the
+# repo also has a Python package at data/ — the dataset path is enforced
+# by config, not by directory name.)
 # ----------------------------------------------------------------------------
 datasets/
-data/
 *.zip
 *.tar
 *.tar.gz

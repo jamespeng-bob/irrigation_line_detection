@@ -1,0 +1,58 @@
+# Class remapping rules for the poly-irrigation dataset.
+#
+# Consumed by scripts/remap_classes.py. Every source class present in the
+# input COCO dataset MUST appear in exactly one of `rename` or `drop`; the
+# script errors out otherwise (so silent label drift is impossible).
+#
+# Semantics:
+#   - rename:  source_name -> destination_name
+#   - drop:    annotations of these classes are removed from the dataset.
+#              (Images whose annotations are all dropped become background
+#              images and are kept.)
+#
+# Final class IDs are assigned by descending instance count in the *source
+# train* split, starting at 1.
+
+rename:
+  # drip family ----------------------------------------------------------
+  drip:            drip
+  drip_2:          drip
+
+  # lateral_other family -------------------------------------------------
+  lateral_other:   lateral_other_0
+  lateral_other_0: lateral_other_0
+  lateral_other_1: lateral_other_0
+
+  # lateral_solid family -------------------------------------------------
+  lateral_solid_0: lateral_solid_0
+  lateral_solid_1: lateral_solid_0
+  lateral_solid_2: lateral_solid_0
+
+  # main family ----------------------------------------------------------
+  # main_0 stays its own class; all other main_* collapse into main_1.
+  main_0:          main_0
+  main_1:          main_1
+  main_2:          main_1
+
+  # sleeves --------------------------------------------------------------
+  sleeves:         sleeves
+
+drop:
+  - callout         # not important for irrigation detection
+  - lateral gray    # only 2 instances, ambiguous label
+  - unsure
+  - unsure_0
+  - unsure_1
+  - unsure_2
+
+# Optional: drop annotations that carry no usable geometry at all (no
+# polyline, no polygon, and a zero-area bbox). NOTE: bboxes with width == 0
+# or height == 0 are NOT considered degenerate on their own — they routinely
+# occur for purely horizontal / vertical pipe segments whose polyline is the
+# real annotation.
+drop_degenerate_bboxes: true
+
+# Optional: after class merging/dropping, also drop any image that ends up
+# without a single annotation. Set true to exclude background-only images
+# from train/valid (so they don't dilute training or skew validation).
+drop_empty_images: true

@@ -1,0 +1,130 @@
+{
+  "train": {
+    "split": "train",
+    "format": "coco",
+    "num_images": 188,
+    "num_annotations": 23895,
+    "num_annotated_images": 188,
+    "num_instances_total": 23895,
+    "instances_per_image_mean": 127.10106382978724,
+    "instances_per_image_max": 738,
+    "class_counts": {
+      "lateral_other_0": 1922,
+      "lateral_solid_0": 16317,
+      "main_0": 1656,
+      "sleeves": 3424,
+      "main_1": 272,
+      "drip": 304
+    },
+    "format_counts": {
+      "polyline": 23890,
+      "bbox_only": 1,
+      "polygon": 4
+    },
+    "image_width_min": 5525,
+    "image_width_max": 14400,
+    "image_height_min": 3575,
+    "image_height_max": 10800,
+    "polyline_length_px": {
+      "n": 23890,
+      "min": 1.4142135623730951,
+      "p50": 201.98460525244883,
+      "mean": 490.19074701064704,
+      "p95": 1848.0516010384472,
+      "max": 21953.207283003274
+    },
+    "bbox_width_px": {
+      "n": 23895,
+      "min": 0.0,
+      "p50": 85.9,
+      "mean": 301.9127679430843,
+      "p95": 1271.0,
+      "max": 10759.91
+    },
+    "bbox_height_px": {
+      "n": 23895,
+      "min": 0.0,
+      "p50": 74.0,
+      "mean": 227.66111697007744,
+      "p95": 969.0,
+      "max": 7820.24
+    },
+    "bbox_area_norm": {
+      "n": 23895,
+      "min": 0.0,
+      "p50": 2.7124501424501424e-05,
+      "mean": 0.0019581551133782955,
+      "p95": 0.00640429758190583,
+      "max": 0.6649489226015947
+    }
+  },
+  "valid": {
+    "split": "valid",
+    "format": "coco",
+    "num_images": 33,
+    "num_annotations": 4147,
+    "num_annotated_images": 33,
+    "num_instances_total": 4147,
+    "instances_per_image_mean": 125.66666666666667,
+    "instances_per_image_max": 610,
+    "class_counts": {
+      "main_0": 295,
+      "sleeves": 635,
+      "lateral_solid_0": 2719,
+      "main_1": 92,
+      "lateral_other_0": 387,
+      "drip": 19
+    },
+    "format_counts": {
+      "polyline": 4147
+    },
+    "image_width_min": 6800,
+    "image_width_max": 13650,
+    "image_height_min": 4400,
+    "image_height_max": 9750,
+    "polyline_length_px": {
+      "n": 4147,
+      "min": 0.0,
+      "p50": 200.33883124596704,
+      "mean": 481.5205246905419,
+      "p95": 1895.5869365090725,
+      "max": 12481.501932755098
+    },
+    "bbox_width_px": {
+      "n": 4147,
+      "min": 0.0,
+      "p50": 90.18,
+      "mean": 283.2377670605257,
+      "p95": 1163.5349999999994,
+      "max": 7622.31
+    },
+    "bbox_height_px": {
+      "n": 4147,
+      "min": 0.0,
+      "p50": 88.35,
+      "mean": 240.21266939956593,
+      "p95": 1014.133,
+      "max": 5521.86
+    },
+    "bbox_area_norm": {
+      "n": 4147,
+      "min": 0.0,
+      "p50": 3.1719576719576716e-05,
+      "mean": 0.0020067013150962655,
+      "p95": 0.0063795312499999954,
+      "max": 0.4632383101851852
+    }
+  },
+  "_meta": {
+    "format": "coco",
+    "root": "/Users/james.peng/Desktop/Irrigation/datasets/poly-irrigation.v6-v2_w_boboflow.coco.merged",
+    "class_names": [
+      "lateral_solid_0",
+      "sleeves",
+      "lateral_other_0",
+      "main_0",
+      "drip",
+      "main_1"
+    ]
+  }
+}

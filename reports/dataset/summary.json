@@ -1,0 +1,158 @@
+{
+  "train": {
+    "split": "train",
+    "format": "coco",
+    "num_images": 190,
+    "num_annotations": 24558,
+    "num_annotated_images": 188,
+    "num_instances_total": 24558,
+    "instances_per_image_mean": 130.62765957446808,
+    "instances_per_image_max": 738,
+    "class_counts": {
+      "lateral_other_0": 1762,
+      "lateral_solid_0": 15911,
+      "main_0": 1656,
+      "lateral_solid_1": 378,
+      "sleeves": 3424,
+      "unsure_0": 218,
+      "lateral_other_1": 113,
+      "lateral_solid_2": 28,
+      "unsure_1": 22,
+      "main_1": 252,
+      "main_2": 20,
+      "callout": 381,
+      "unsure": 16,
+      "unsure_2": 24,
+      "drip": 303,
+      "lateral_other": 47,
+      "lateral gray": 2,
+      "drip_2": 1
+    },
+    "format_counts": {
+      "polyline": 24553,
+      "bbox_only": 1,
+      "polygon": 4
+    },
+    "image_width_min": 5525,
+    "image_width_max": 14400,
+    "image_height_min": 3575,
+    "image_height_max": 10800,
+    "polyline_length_px": {
+      "n": 24553,
+      "min": 1.264802356101373,
+      "p50": 204.09930439157876,
+      "mean": 496.4965577009679,
+      "p95": 1880.3724900902766,
+      "max": 21953.207283003274
+    },
+    "bbox_width_px": {
+      "n": 24558,
+      "min": 0.0,
+      "p50": 88.0,
+      "mean": 308.1390817656161,
+      "p95": 1304.1499999999978,
+      "max": 10759.91
+    },
+    "bbox_height_px": {
+      "n": 24558,
+      "min": 0.0,
+      "p50": 75.77000000000001,
+      "mean": 228.69396245622607,
+      "p95": 970.0139999999975,
+      "max": 7820.24
+    },
+    "bbox_area_norm": {
+      "n": 24558,
+      "min": 0.0,
+      "p50": 2.9277976466049387e-05,
+      "mean": 0.002095352248306933,
+      "p95": 0.006613441843970125,
+      "max": 0.6649489226015947
+    }
+  },
+  "valid": {
+    "split": "valid",
+    "format": "coco",
+    "num_images": 33,
+    "num_annotations": 4276,
+    "num_annotated_images": 33,
+    "num_instances_total": 4276,
+    "instances_per_image_mean": 129.57575757575756,
+    "instances_per_image_max": 610,
+    "class_counts": {
+      "main_0": 295,
+      "sleeves": 635,
+      "lateral_solid_0": 2676,
+      "main_1": 92,
+      "lateral_other_0": 387,
+      "unsure_0": 52,
+      "unsure_1": 1,
+      "drip": 19,
+      "callout": 76,
+      "lateral_solid_1": 43
+    },
+    "format_counts": {
+      "polyline": 4276
+    },
+    "image_width_min": 6800,
+    "image_width_max": 13650,
+    "image_height_min": 4400,
+    "image_height_max": 9750,
+    "polyline_length_px": {
+      "n": 4276,
+      "min": 0.0,
+      "p50": 205.73757069772188,
+      "mean": 496.94841150350874,
+      "p95": 1970.2877158189845,
+      "max": 12481.501932755098
+    },
+    "bbox_width_px": {
+      "n": 4276,
+      "min": 0.0,
+      "p50": 91.845,
+      "mean": 297.42052385406924,
+      "p95": 1230.335,
+      "max": 7622.31
+    },
+    "bbox_height_px": {
+      "n": 4276,
+      "min": 0.0,
+      "p50": 89.425,
+      "mean": 242.1414733395697,
+      "p95": 1014.5725,
+      "max": 5521.86
+    },
+    "bbox_area_norm": {
+      "n": 4276,
+      "min": 0.0,
+      "p50": 3.533132304526749e-05,
+      "mean": 0.002009316470768291,
+      "p95": 0.006367578125,
+      "max": 0.4632383101851852
+    }
+  },
+  "_meta": {
+    "format": "coco",
+    "root": "/Users/james.peng/Desktop/Irrigation/datasets/poly-irrigation.v6-v2_w_boboflow.coco",
+    "class_names": [
+      "callout",
+      "drip",
+      "drip_2",
+      "lateral gray",
+      "lateral_other",
+      "lateral_other_0",
+      "lateral_other_1",
+      "lateral_solid_0",
+      "lateral_solid_1",
+      "lateral_solid_2",
+      "main_0",
+      "main_1",
+      "main_2",
+      "sleeves",
+      "unsure",
+      "unsure_0",
+      "unsure_1",
+      "unsure_2"
+    ]
+  }
+}

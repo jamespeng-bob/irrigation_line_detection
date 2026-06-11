@@ -1,0 +1,137 @@
+# ----------------------------------------------------------------------------
+# Python
+# ----------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+.eggs/
+build/
+dist/
+develop-eggs/
+downloads/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ----------------------------------------------------------------------------
+# Virtual environments
+# ----------------------------------------------------------------------------
+.env
+.env.*
+.venv
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.python-version
+.conda/
+conda-env/
+*.conda
+*.mamba
+
+# ----------------------------------------------------------------------------
+# Jupyter / IPython
+# ----------------------------------------------------------------------------
+.ipynb_checkpoints/
+profile_default/
+ipython_config.py
+*.ipynb_checkpoints
+
+# ----------------------------------------------------------------------------
+# Editors / IDEs
+# ----------------------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.cursor/
+.history/
+
+# ----------------------------------------------------------------------------
+# OS-specific
+# ----------------------------------------------------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ----------------------------------------------------------------------------
+# Logs / caches / temp
+# ----------------------------------------------------------------------------
+*.log
+logs/
+*.tmp
+*.bak
+*.cache
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# ----------------------------------------------------------------------------
+# ML / DL artifacts (weights, runs, intermediate outputs)
+# ----------------------------------------------------------------------------
+# Ultralytics / YOLO default output dirs
+runs/
+wandb/
+mlruns/
+lightning_logs/
+tb_logs/
+tensorboard/
+checkpoints/
+ckpts/
+
+# Common model weight formats
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.engine
+*.tflite
+*.h5
+*.pb
+*.safetensors
+
+# Allow committing tiny pretrained references if needed (uncomment if used)
+# !configs/**/*.pt
+
+# ----------------------------------------------------------------------------
+# Datasets / large media (datasets live outside the repo on disk / server)
+# ----------------------------------------------------------------------------
+datasets/
+data/
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+
+# ----------------------------------------------------------------------------
+# Workspace / local-only files
+# ----------------------------------------------------------------------------
+*.code-workspace
+local_*
+scratch/
+tmp/

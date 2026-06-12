@@ -51,6 +51,10 @@ class WholeImageEvalConfig:
     max_images: Optional[int] = None
     # Cache full-image GT masks across calls to avoid re-rasterizing each time.
     cache_gt: bool = True
+    # Optional: restrict the loader (and therefore the per-class metrics) to
+    # a subset of the COCO classes. The channel order follows the allowlist,
+    # matching what the trained model was fed.
+    class_allowlist: Optional[list[str]] = None
 
 
 def _rasterize_class_mask(
@@ -89,7 +93,10 @@ class WholeImageEvaluator:
             self.class_names,
             self._cat_id_to_channel,
             _stats,
-        ) = load_split(self.config.valid_dir)
+        ) = load_split(
+            self.config.valid_dir,
+            class_allowlist=self.config.class_allowlist,
+        )
         # Defensive — the trainer also validates this, but a mismatch here
         # would silently produce wrong metrics, so re-check.
         assert len(self.class_names) == self.config.num_classes, (

@@ -11,8 +11,14 @@ Modes
 -----
 ``random``
     Pick a random image with annotations, then a random polyline (uniform
-    across classes by default), then center a tile on a random point along
-    that polyline (with jitter). Foreground pixels are guaranteed.
+    across classes), then center a tile on a random point along that
+    polyline (with jitter). Foreground pixels are guaranteed.
+``random_class_balanced``
+    Class-stratified sampler: pick a class uniformly first, then a polyline
+    of that class uniformly across all images, then center+jitter the tile
+    on a random point of that polyline. Effectively oversamples rare-class
+    tiles so each class gets ~equal gradient signal per epoch — Phase-2
+    intervention for the rare-class collapse observed in v1.
 ``grid``
     Deterministic sliding window over every image. Used for whole-image
     inference / per-image Dice.
@@ -99,8 +105,9 @@ class TileDataset(Dataset):
         samples_per_epoch_per_image: int = 8,
         jitter_frac: float = 0.25,
         seed: Optional[int] = None,
+        class_allowlist: Optional[list[str]] = None,
     ) -> None:
-        if mode not in ("random", "grid", "pos_only_grid"):
+        if mode not in ("random", "random_class_balanced", "grid", "pos_only_grid"):
             raise ValueError(f"Unknown mode: {mode!r}")
         self.split_dir = Path(split_dir)
         self.num_classes = int(num_classes)
@@ -121,16 +128,21 @@ class TileDataset(Dataset):
             self.class_names,
             self.cat_id_to_channel,
             self._load_stats,
-        ) = load_split(self.split_dir)
+        ) = load_split(self.split_dir, class_allowlist=class_allowlist)
 
         if len(self.class_names) != self.num_classes:
             raise ValueError(
                 f"num_classes={self.num_classes} but {self.split_dir} contains "
-                f"{len(self.class_names)} foreground classes: {self.class_names}"
+                f"{len(self.class_names)} foreground classes (after allowlist): "
+                f"{self.class_names}"
             )
 
+        # ── Per-class polyline pools (built lazily by the class-balanced
+        #    sampler; harmless to leave None for other modes).
+        self._polys_by_class: Optional[list[list[tuple[int, ClassPolyline]]]] = None
+
         # ── Mode-dependent indexing ──────────────────────────────────────
-        if mode == "random":
+        if mode in ("random", "random_class_balanced"):
             n_with = sum(1 for p in self.polylines_by_image.values() if p)
             self._length = max(1, samples_per_epoch_per_image * max(1, n_with))
             self._grid: Optional[list[tuple[int, int, int]]] = None
@@ -148,6 +160,8 @@ class TileDataset(Dataset):
     def __getitem__(self, idx: int) -> TileSample:
         if self.mode == "random":
             img_id, row, col = self._sample_random_tile()
+        elif self.mode == "random_class_balanced":
+            img_id, row, col = self._sample_random_class_balanced_tile()
         else:
             assert self._grid is not None
             img_id, row, col = self._grid[idx % len(self._grid)]
@@ -248,10 +262,51 @@ class TileDataset(Dataset):
         rec = self.images[img_id]
         polys = self.polylines_by_image[img_id]
         pl = self.rng.choice(polys)
+        return self._center_tile_on_polyline(img_id, rec, pl)
+
+    def _build_polys_by_class(self) -> list[list[tuple[int, ClassPolyline]]]:
+        """Per-class flat list of ``(image_id, ClassPolyline)`` pairs. Cached."""
+        pools: list[list[tuple[int, ClassPolyline]]] = [
+            [] for _ in range(self.num_classes)
+        ]
+        for img_id, polys in self.polylines_by_image.items():
+            for pl in polys:
+                pools[pl.class_idx].append((img_id, pl))
+        return pools
+
+    def _sample_random_class_balanced_tile(self) -> tuple[int, int, int]:
+        """Class-stratified random sampler.
+
+        Pick a class uniformly among classes that have ≥ 1 polyline anywhere
+        in the dataset, then a ``(image, polyline)`` pair uniformly within
+        that class, then center+jitter a tile on a random point of the
+        polyline. This evens out per-class gradient signal regardless of
+        how skewed the polyline-count distribution is.
+        """
+        if self._polys_by_class is None:
+            self._polys_by_class = self._build_polys_by_class()
+
+        non_empty = [k for k, pool in enumerate(self._polys_by_class) if pool]
+        if not non_empty:
+            # Should be unreachable: __init__ checks num_classes against
+            # the loaded class set. Defensive fallback to uniform random.
+            return self._sample_random_tile()
+
+        k = self.rng.choice(non_empty)
+        img_id, pl = self.rng.choice(self._polys_by_class[k])
+        rec = self.images[img_id]
+        return self._center_tile_on_polyline(img_id, rec, pl)
+
+    def _center_tile_on_polyline(
+        self,
+        img_id: int,
+        rec: ImageRecord,
+        pl: ClassPolyline,
+    ) -> tuple[int, int, int]:
+        """Shared centering + jitter for both random samplers."""
         pt = pl.points[self.rng.randint(0, len(pl.points) - 1)]
         col_center = int(round(pt[0]))
         row_center = int(round(pt[1]))
-
         half = self.tile_size // 2
         jitter = int(self.jitter_frac * self.tile_size)
         rj = self.rng.randint(-jitter, jitter) if jitter > 0 else 0

@@ -71,26 +71,48 @@ def _is_background_category(cat: dict) -> bool:
 
 def build_class_mapping(
     raw_categories: list[dict],
+    class_allowlist: list[str] | None = None,
 ) -> tuple[list[str], dict[int, int]]:
     """Return ``(class_names, cat_id_to_channel)`` from the COCO categories list.
 
-    Background categories (``supercategory == "none"``) are skipped. Real
-    categories are ordered **as they appear** in the COCO file (the remap
-    script writes them in descending-train-frequency order, which is what
-    we want for channel-0 == most common).
+    Background categories (``supercategory == "none"``) are always skipped.
+
+    ``class_allowlist`` controls which foreground classes are kept and in
+    what channel order:
+
+    - ``None`` (default): keep every real category, in the order they appear
+      in the COCO file. The remap script writes them in descending-train-
+      frequency order, so channel 0 == most common.
+    - ``list[str]``: keep only those classes, and assign channels in the
+      order they appear in the allowlist. Other classes are dropped from
+      ``cat_id_to_channel``, which means their annotations get skipped by
+      ``load_split`` downstream. Raises ``ValueError`` if any allowlist name
+      isn't a real category in the COCO file (typo guard).
 
     The returned mapping ``cat_id_to_channel`` lets us translate a raw COCO
     ``category_id`` into the ``[0, K)`` channel index used everywhere
     downstream (model output, masks, metrics).
     """
+    real_categories = [c for c in raw_categories if not _is_background_category(c)]
+    name_to_cat_id = {str(c["name"]): int(c["id"]) for c in real_categories}
+
+    if class_allowlist is None:
+        ordered_names = [str(c["name"]) for c in real_categories]
+    else:
+        unknown = [n for n in class_allowlist if n not in name_to_cat_id]
+        if unknown:
+            raise ValueError(
+                f"class_allowlist contains classes not in this COCO: {unknown}. "
+                f"Available real classes: {list(name_to_cat_id)}"
+            )
+        ordered_names = list(class_allowlist)
+
     class_names: list[str] = []
     cat_id_to_channel: dict[int, int] = {}
-    for c in raw_categories:
-        if _is_background_category(c):
-            continue
+    for n in ordered_names:
         ch = len(class_names)
-        class_names.append(str(c["name"]))
-        cat_id_to_channel[int(c["id"])] = ch
+        class_names.append(n)
+        cat_id_to_channel[name_to_cat_id[n]] = ch
     return class_names, cat_id_to_channel
 
 
@@ -125,6 +147,7 @@ def _expand_polyline_field(poly_field) -> list[np.ndarray]:
 
 def load_split(
     split_dir: Path | str,
+    class_allowlist: list[str] | None = None,
 ) -> tuple[
     dict[int, ImageRecord],
     dict[int, list[ClassPolyline]],
@@ -133,6 +156,17 @@ def load_split(
     dict[str, int],
 ]:
     """Parse a v6 polyline COCO split.
+
+    Parameters
+    ----------
+    split_dir
+        Directory containing ``_annotations.coco.json`` and the image files.
+    class_allowlist
+        Optional list of class names to keep. When provided, only annotations
+        of those classes are returned, and the channel order in ``class_names``
+        follows the allowlist (not the COCO file). Use this to spin up a
+        specialist model that targets a subset of classes from the same
+        underlying dataset.
 
     Returns
     -------
@@ -144,11 +178,13 @@ def load_split(
         Ordered list of foreground class names, length ``K``. The channel
         index of a class is its position in this list.
     cat_id_to_channel
-        Raw COCO ``category_id`` → ``[0, K)`` channel index.
+        Raw COCO ``category_id`` → ``[0, K)`` channel index. When an
+        allowlist is provided, only allowlisted category ids appear here.
     stats
         Diagnostic counters useful for sanity-checking the load:
         ``n_images``, ``n_annotations``, ``n_polylines``, ``n_skipped_bbox_only``,
-        ``n_skipped_unknown_cat``.
+        ``n_skipped_unknown_cat`` (which now includes allowlist-filtered
+        annotations).
     """
     split_dir = Path(split_dir)
     ann_path = split_dir / "_annotations.coco.json"
@@ -157,7 +193,9 @@ def load_split(
     with ann_path.open() as f:
         raw = json.load(f)
 
-    class_names, cat_id_to_channel = build_class_mapping(raw.get("categories", []))
+    class_names, cat_id_to_channel = build_class_mapping(
+        raw.get("categories", []), class_allowlist=class_allowlist
+    )
 
     images: dict[int, ImageRecord] = {}
     for img in raw.get("images", []):

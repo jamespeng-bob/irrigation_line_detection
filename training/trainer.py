@@ -188,6 +188,12 @@ class SegTrainer:
         }
         self.best_val_dice_macro = -1.0
         self.best_val_loss = float("inf")
+        # Separately track the best whole-image macro Dice so we save a
+        # production-ready checkpoint distinct from the tile-best one.
+        # v1's tile-best (ep 78) diverged from whole-image-best (ep 40):
+        # ep-78 tile Dice was higher but whole-image Dice was lower —
+        # the model had drifted to over-predict on background-only tiles.
+        self.best_whole_image_dice_macro = -1.0
 
         self._dice_acc = PerClassDiceAccumulator(self.K, threshold=0.5)
         self._iou_acc = PerClassIoUAccumulator(self.K, threshold=0.5)
@@ -435,6 +441,40 @@ class SegTrainer:
         fig.savefig(self.save_dir / "history.png", dpi=120)
         plt.close(fig)
 
+    def _maybe_save_best_whole_image(
+        self,
+        epoch: int,
+        whole_image_metrics: dict,
+        val_metrics: dict,
+    ) -> bool:
+        """Save ``best_whole_image.pth`` when whole-image macro Dice improves.
+
+        Runs only on rank 0, only when whole-image eval ran this epoch.
+        This checkpoint is the *production* best — selected against the
+        true full-image evaluation, not the optimistic tile-level metric.
+        """
+        wi_dice = float(whole_image_metrics["dice_macro"])
+        if wi_dice <= self.best_whole_image_dice_macro:
+            return False
+        self.best_whole_image_dice_macro = wi_dice
+        state_dict = (
+            self.model.module.state_dict() if hasattr(self.model, "module")
+            else self.model.state_dict()
+        )
+        torch.save(
+            {
+                "epoch": epoch,
+                "model_state_dict": state_dict,
+                "whole_image_dice_macro": wi_dice,
+                "whole_image_iou_macro": float(whole_image_metrics["iou_macro"]),
+                "whole_image_cldice_macro": float(whole_image_metrics["cldice_macro"]),
+                "tile_val_dice_macro": float(val_metrics["dice"]["macro"]),
+                "class_names": self.class_names,
+            },
+            self.save_dir / "best_whole_image.pth",
+        )
+        return True
+
     def _maybe_save_best(self, epoch: int, val_metrics: dict) -> bool:
         improved = False
         if self.config.best_metric == "dice_macro":
@@ -534,6 +574,16 @@ class SegTrainer:
                 improved = self._maybe_save_best(epoch, val_metrics)
                 if improved:
                     print(f"  saved best → {self.save_dir / 'best.pth'}")
+                if whole_image_metrics is not None:
+                    wi_improved = self._maybe_save_best_whole_image(
+                        epoch, whole_image_metrics, val_metrics
+                    )
+                    if wi_improved:
+                        print(
+                            f"  saved best (whole-image) → "
+                            f"{self.save_dir / 'best_whole_image.pth'}  "
+                            f"wi_dice_macro={whole_image_metrics['dice_macro']:.4f}"
+                        )
                 state_dict = (
                     self.model.module.state_dict() if hasattr(self.model, "module")
                     else self.model.state_dict()

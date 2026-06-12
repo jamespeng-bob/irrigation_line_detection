@@ -128,9 +128,16 @@ def build_datasets(cfg: dict) -> tuple[TileDataset, TileDataset, list[str]]:
     if not val_dir.is_dir():
         raise FileNotFoundError(f"Val dir not found: {val_dir}")
 
+    # Optional class allowlist (e.g. for specialist models). When supplied,
+    # ``load_split`` filters to those classes and orders the channels per
+    # the allowlist; the model + metrics + evaluator all see only K' classes.
+    class_allowlist = cfg["data"].get("class_allowlist") or None
+
     # Resolve class list once from the training split's COCO file so the
     # config does not have to duplicate it (and cannot drift from disk).
-    _, _, class_names, _, _stats = load_split(train_dir)
+    _, _, class_names, _, _stats = load_split(
+        train_dir, class_allowlist=class_allowlist
+    )
     num_classes = len(class_names)
 
     aug_cfg = cfg.get("augmentation", {})
@@ -152,6 +159,7 @@ def build_datasets(cfg: dict) -> tuple[TileDataset, TileDataset, list[str]]:
         thickness=int(cfg["rasterize"]["thickness"]),
         mean=tuple(norm["mean"]),
         std=tuple(norm["std"]),
+        class_allowlist=class_allowlist,
     )
 
     train_ds = TileDataset(
@@ -319,6 +327,7 @@ def main() -> int:
             mean=tuple(cfg["normalization"]["mean"]),
             std=tuple(cfg["normalization"]["std"]),
             batch_size=int(cfg["training"].get("whole_image_eval_batch_size", 4)),
+            class_allowlist=cfg["data"].get("class_allowlist") or None,
         )
         whole_image_evaluator = WholeImageEvaluator(eval_cfg)
 

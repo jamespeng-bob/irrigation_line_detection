@@ -1,0 +1,31 @@
+# v2 specialist — lateral_solid_0 + lateral_other_0 only.
+#
+# Tests the "specialist > joint multi-class" hypothesis on the cleanest
+# semantic pair we have: solid vs dashed lateral lines. If this run hits
+# significantly higher per-class Dice than v1's joint model on these two
+# classes, the MoE-style decomposition is validated and we can extend it
+# to other class pairs (e.g. main_0 + main_1).
+#
+# How the filter works: ``data.class_allowlist`` tells the loader to drop
+# all annotations whose class isn't in the list. Channel order follows
+# the allowlist exactly, so:
+#
+#     channel 0 = lateral_solid_0  (solid lateral lines)
+#     channel 1 = lateral_other_0  (dashed lateral lines)
+#
+# The IMAGES still contain mains / drip / sleeves visually, but the model
+# never sees positive supervision for them — it learns to predict positive
+# only for the two lateral types, with the rest treated as background.
+#
+# We keep class-balanced sampling so the ~8× count imbalance within the
+# pair (16k solid vs 1.9k other in the source data) doesn't reproduce the
+# rare-class problem on a smaller scale.
+
+data:
+  class_allowlist:
+    - lateral_solid_0
+    - lateral_other_0
+  train_mode: random_class_balanced
+
+training:
+  save_dir: runs/v2_specialist_lateral_pair

@@ -1,0 +1,23 @@
+# v2 general — Phase-2 multi-class model with class-balanced sampling.
+#
+# Same encoder / loss / batch / epochs as v1 (so the only changing levers
+# vs v1 are sampling + checkpoint selection). v1 collapsed on `drip` (peak
+# 0.51 @ ep 72 → 0.20 @ ep 80) and `main_1` (peak 0.24 @ ep 25 → 0.14 @ ep 80)
+# because uniform-over-polylines sampling let `lateral_solid_0` (16k inst.)
+# dominate every batch's gradient.
+#
+# The class-balanced sampler should let each class contribute ~equal
+# gradient signal per epoch. We also keep the new save-best-by-whole-image
+# checkpoint (always-on once wired into the trainer) so we capture the
+# production-best epoch even if the tile-best drifts late.
+#
+# GPU allocation (one-off — AGENTS.md §2 default is cuda:1 for this project,
+# but both GPUs are idle right now and the specialist run also wants one).
+# Launch with `--device cuda:0` to land here; `scripts/run_phase2.sh` does
+# this automatically.
+
+data:
+  train_mode: random_class_balanced
+
+training:
+  save_dir: runs/v2_general_classbalanced

@@ -33,9 +33,21 @@ operating on this project. Follow them exactly.
 
 ## 2. Remote server details
 
-- **Hostname / SSH alias**: `bobyard-server-6000`
-  - Connect with: `ssh bobyard-server-6000`
-  - Assume the SSH config on the MacBook is already set up; do not modify it.
+- **Hostname / SSH aliases**: two, picked by whether you're on company wifi.
+  | Network | Alias to use | Notes |
+  |---|---|---|
+  | On the company wifi | `ssh bobyard-server-6000` | direct LAN connection |
+  | Off-network (home / coffee shop / hotel) | `ssh bobyard-server-6000-tunnel` | goes through a TCP tunnel |
+  - The off-network alias only works while a **RustDesk TCP tunnel** is up
+    on the user's Mac. If `ssh bobyard-server-6000-tunnel` hangs or refuses
+    the connection, the agent should **stop and remind the user to**:
+    1. Open RustDesk on the MacBook, and
+    2. Enable the TCP tunnel to the 6000.
+  - Assume both SSH aliases are already configured in `~/.ssh/config`; do
+    not modify SSH config.
+  - The agent should not auto-guess which alias to use — when an SSH step is
+    needed, ask the user (or default to the LAN alias and fall back to the
+    tunnel alias on failure with a clear "is RustDesk on?" prompt).
 - **GPUs**: 2 × NVIDIA RTX 6000 Ada
   - **GPU allocation convention (two parallel projects on this box):**
     | project | default GPU | rationale |
@@ -142,6 +154,9 @@ cd /Users/james.peng/Desktop/Irrigation/irrigation_line_detection
 git add -A && git commit -m "..." && git push
 
 # Remote (RTX 6000 server)
+#   On company wifi:   ssh bobyard-server-6000
+#   Off-network:       ssh bobyard-server-6000-tunnel
+#                       (requires RustDesk TCP tunnel running on the Mac)
 ssh bobyard-server-6000
 cd /home/rtx6000/james/irrigation_line_detection
 git pull --ff-only

@@ -37,8 +37,17 @@ operating on this project. Follow them exactly.
   - Connect with: `ssh bobyard-server-6000`
   - Assume the SSH config on the MacBook is already set up; do not modify it.
 - **GPUs**: 2 × NVIDIA RTX 6000 Ada
-  - Use `CUDA_VISIBLE_DEVICES=0` or `=1` to pin to a single GPU when others
-    are using the box.
+  - **GPU allocation convention (two parallel projects on this box):**
+    | project | default GPU | rationale |
+    |---|---|---|
+    | irrigation line segmentation (THIS repo) | **`cuda:1`** | declared first |
+    | irrigation **symbol** detection         | **`cuda:0`** | the other project |
+    This is the **default**, not a lock — if `nvidia-smi` shows the other
+    GPU idle, override with `--device cuda:0` (or `=1`) on the CLI. For
+    DDP runs that need both GPUs, coordinate with the symbol-detection
+    user before launching.
+  - `configs/train.yaml` ships with `training.device: cuda:1` so a plain
+    `python train.py` lands on the right GPU by default.
   - Check availability with `nvidia-smi` before launching big jobs.
 - **Dataset path on server**:
   `/home/rtx6000/james/datasets/poly-irrigation.v6-v2_w_boboflow.yolo26`

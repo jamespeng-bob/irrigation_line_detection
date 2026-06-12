@@ -61,7 +61,10 @@ training:
   lr:          1.0e-4
   weight_decay: 1.0e-4
   grad_clip:   1.0
-  device:      cuda
+  # Default to cuda:1 on bobyard-server-6000 — the symbol-detection project
+  # defaults to cuda:0 (see AGENTS.md §2). Override with `--device cuda:0`
+  # when the other GPU is idle. DDP runs (torchrun) ignore this field.
+  device:      cuda:1
   save_dir:    runs/v1_mitb2_bcedice
   log_interval: 20
   val_viz_count: 4

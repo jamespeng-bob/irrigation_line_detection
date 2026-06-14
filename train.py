@@ -299,6 +299,8 @@ def main() -> int:
         save_dir=cfg["training"]["save_dir"],
         num_classes=len(class_names),
         class_names=class_names,
+        model_name=str(cfg["model"]["name"]),
+        encoder_name=str(cfg["model"]["encoder"]),
         epochs=int(cfg["training"]["epochs"]),
         lr=float(cfg["training"]["lr"]),
         weight_decay=float(cfg["training"]["weight_decay"]),

@@ -1,0 +1,30 @@
+# v2 specialist — main_0 + main_1 only.
+#
+# Mirror of train_v2_specialist_lateral_pair.yaml for the "mains" group.
+# Motivation: v2 general's class-balanced sampler rescued every class
+# EXCEPT main_1 (whole-image Dice 0.129 → 0.052; tile peak 0.241 → 0.100).
+# The hypothesis: main_1 is too rare (272 train inst., ~60-80 images) for
+# the joint model — class-balanced sampling repeatedly recycles its
+# limited examples until the model overfits. Pulling it into a specialist
+# alongside its sibling class (main_0, 1,656 inst.) gives the model more
+# semantically-related signal (both are "main" lines) without bombarding
+# it with main_1 specifically. If this run beats v2 general on main_1
+# (Dice 0.05) it validates the "pair semantically related classes"
+# decomposition.
+#
+# Channel order:
+#     channel 0 = main_0 (the more common of the two)
+#     channel 1 = main_1
+#
+# All other knobs (encoder, loss, batch size, epochs, LR) identical to
+# the lateral-pair specialist so the only varying axis between the two
+# specialist runs is the class pair.
+
+data:
+  class_allowlist:
+    - main_0
+    - main_1
+  train_mode: random_class_balanced
+
+training:
+  save_dir: runs/v2_specialist_main_pair

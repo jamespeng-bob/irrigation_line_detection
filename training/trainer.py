@@ -53,6 +53,11 @@ class TrainerConfig:
     save_dir: str
     num_classes: int
     class_names: list[str]
+    # Model identity, copied through to every saved checkpoint so any
+    # downstream loader (fusion eval, deployment, etc.) can rebuild the
+    # network without consulting the training config separately.
+    model_name: str = "smp_unet"
+    encoder_name: str = "mit_b2"
     epochs: int = 80
     lr: float = 1e-4
     weight_decay: float = 1e-4
@@ -470,6 +475,8 @@ class SegTrainer:
                 "whole_image_cldice_macro": float(whole_image_metrics["cldice_macro"]),
                 "tile_val_dice_macro": float(val_metrics["dice"]["macro"]),
                 "class_names": self.class_names,
+                "model_name": self.config.model_name,
+                "encoder_name": self.config.encoder_name,
             },
             self.save_dir / "best_whole_image.pth",
         )
@@ -500,6 +507,8 @@ class SegTrainer:
                     "val_iou_macro": val_metrics["iou"]["macro"],
                     "val_total": val_metrics["total"],
                     "class_names": self.class_names,
+                    "model_name": self.config.model_name,
+                    "encoder_name": self.config.encoder_name,
                 },
                 self.save_dir / "best.pth",
             )
@@ -589,8 +598,13 @@ class SegTrainer:
                     else self.model.state_dict()
                 )
                 torch.save(
-                    {"epoch": epoch, "model_state_dict": state_dict,
-                     "class_names": self.class_names},
+                    {
+                        "epoch": epoch,
+                        "model_state_dict": state_dict,
+                        "class_names": self.class_names,
+                        "model_name": self.config.model_name,
+                        "encoder_name": self.config.encoder_name,
+                    },
                     self.save_dir / "last.pth",
                 )
                 self._update_history(train_metrics, val_metrics, lr=current_lr,
